@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  
+  
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    
+    
+    <link rel="shortcut icon" href="../../../../img/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+    <title>Effective C++ Chapter 3 - The Hub</title>
+    <link href="../../../../css/bootstrap-3.3.7.min.css" rel="stylesheet">
+    <link href="../../../../css/font-awesome-4.7.0.css" rel="stylesheet">
+    <link href="../../../../css/base.css" rel="stylesheet">
+    <link rel="stylesheet" href="../../../../css/highlight.css">
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+    <![endif]-->
+
+    <script src="../../../../js/jquery-3.2.1.min.js"></script>
+    <script src="../../../../js/bootstrap-3.3.7.min.js"></script>
+    <script src="../../../../js/highlight.pack.js"></script>
+    
+    <base target="_top">
+    <script>
+      var base_url = '../../../..';
+      var is_top_frame = false;
+        
+        var pageToc = [
+          {title: "RAII (Resource Acquisition Is Initialization)", url: "#_top", children: [
+          ]},
+          {title: "Copying RAII objects", url: "#copying-raii-objects", children: [
+          ]},
+          {title: "new, new[], delete, delete[]", url: "#new-new-delete-delete", children: [
+          ]},
+        ];
+
+    </script>
+    <script src="../../../../js/base.js"></script>
+      <script src="../../../../search/main.js"></script> 
+</head>
+
+<body>
+<script>
+if (is_top_frame) { $('body').addClass('wm-top-page'); }
+</script>
+
+
+
+<div class="container-fluid wm-page-content">
+  <a name="_top"></a>
+    
+
+    
+
+    <h2 id="raii-resource-acquisition-is-initialization">RAII (Resource Acquisition Is Initialization)</h2>
+<p>This chapter is about resource management, therefore RAII is a very important concept.
+RAII is a technique about resource management - acquires resources when constructed, and properly release them when destroyed.
+![[Pasted image 20250306101433.png]]</p>
+<p>Generally you need RAII objects to wrap resources (e.g. pointers, mutexes)</p>
+<pre><code>class RAII
+{
+public:
+    RAII()
+    {
+        _something = new Something();
+    }
+    ~RAII()
+    {
+        delete _something;
+    }
+private:
+    Something* _something;
+};
+</code></pre>
+<p>Use smart pointers can be good idea (TODO: write about smart pointers later)</p>
+<pre><code>std::shared_pointer&lt;Something&gt; something;
+</code></pre>
+<p>There are some pitfalls</p>
+<h2 id="copying-raii-objects">Copying RAII objects</h2>
+<p>Be aware when copying. When doing shallow copy, if one resource is released first, the other one may be dangling / deadlock / ... </p>
+<pre><code>mutex m;
+{
+    Lock l1(&amp;m);
+
+    Lock l2(l1);
+}
+// l2 release first
+// what will happen to l2?
+</code></pre>
+<p>You may prohibit copying if necessary</p>
+<pre><code>class Uncopyable
+{
+private:
+    inline Uncopyable(const Uncopyable&amp;);
+    inline Uncopyable&amp; operator= (const Uncopyable&amp;);
+};
+
+class Something : private Uncopyable // TODO: write about why it's private
+{
+// content
+};
+</code></pre>
+<p>Or, implement reference count. Note that the default destructor of shared pointer is to delete resource, make it to unlock mutex if it's a lock.</p>
+<h2 id="new-new-delete-delete">new, new[], delete, delete[]</h2>
+<p>What does new do?
+1. allocate memory
+2. call one or more constructors</p>
+<p>If you have something like this:</p>
+<pre><code>std::string* strings = new std::string[100];
+</code></pre>
+<p>Constructor of std::string will be called 100 times!
+Therefore you cannot use <code>delete</code>, that'll only delete one element (the first one). 
+Instead, use delete[].
+Always have new and delete matched. If there's a [] in new expression, use delete[]!!!</p>
+
+  <br>
+    
+
+    <br>
+</div>
+
+<footer class="col-md-12 wm-page-content">
+  <p>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a> using <a href="None">Windmill Dark</a> theme by None (noraj).</p>
+</footer>
+
+</body>
+</html>

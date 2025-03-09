@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  
+  
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    
+    
+    <link rel="shortcut icon" href="../../../../img/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+    <title>Effective C++ Chapter 2 - The Hub</title>
+    <link href="../../../../css/bootstrap-3.3.7.min.css" rel="stylesheet">
+    <link href="../../../../css/font-awesome-4.7.0.css" rel="stylesheet">
+    <link href="../../../../css/base.css" rel="stylesheet">
+    <link rel="stylesheet" href="../../../../css/highlight.css">
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+    <![endif]-->
+
+    <script src="../../../../js/jquery-3.2.1.min.js"></script>
+    <script src="../../../../js/bootstrap-3.3.7.min.js"></script>
+    <script src="../../../../js/highlight.pack.js"></script>
+    
+    <base target="_top">
+    <script>
+      var base_url = '../../../..';
+      var is_top_frame = false;
+        
+        var pageToc = [
+          {title: "Intro", url: "#_top", children: [
+          ]},
+          {title: "Constructor", url: "#constructor", children: [
+          ]},
+          {title: "Destructor", url: "#destructor", children: [
+          ]},
+          {title: "Virtual function", url: "#virtual-function", children: [
+          ]},
+          {title: "Call Order", url: "#call-order", children: [
+          ]},
+          {title: "Assignment Operators", url: "#assignment-operators", children: [
+          ]},
+          {title: "Handle operator= when assigned to self", url: "#handle-operator-when-assigned-to-self", children: [
+          ]},
+          {title: "Copying functions should copy all of an object\u0027s data", url: "#copying-functions-should-copy-all-of-an-objects-data", children: [
+          ]},
+        ];
+
+    </script>
+    <script src="../../../../js/base.js"></script>
+      <script src="../../../../search/main.js"></script> 
+</head>
+
+<body>
+<script>
+if (is_top_frame) { $('body').addClass('wm-top-page'); }
+</script>
+
+
+
+<div class="container-fluid wm-page-content">
+  <a name="_top"></a>
+    
+
+    
+
+    <h2 id="intro">Intro</h2>
+<p>Understanding what happens when instantiating an object has always been difficult for me. Looking at some C++ quiz, I was like WTF, what does all these mean!</p>
+<p>This chapter has helped me a lot. So...</p>
+<p>To begin with, what does this mean?
+<code>class Empty{};</code>
+If you ever put this class into use, you should not expect it to be empty.
+If you ever do the following things:</p>
+<pre><code>Empty e1;         // default constructor; desturctor
+Empty e2(e1);     // copy constructor
+e2 = e1;          // copy assignment operator
+</code></pre>
+<p>Essentially, compilers will create something for you:</p>
+<pre><code>class Empty{
+public:
+    inline Empty() {...}                           // default constructor
+    inline Empty(const Empty&amp; rhs) {...}           // copy constructor
+
+    inline ~Empty() {...}                          // destructor
+    inline Empty&amp; operator=(const Empty&amp; rhs){...} // copy assignment operator
+};
+</code></pre>
+<p>Note: these functions are generated only if they are needed.</p>
+<p>So many questions come from these, let's take a deeper look into each type of function</p>
+<h2 id="constructor">Constructor</h2>
+<p>It there's no user-defined constructor, like explained above, the compiler will create a default constructor for you, it will be without parameters and without initializer list, plus a null body</p>
+<pre><code>public:
+    inline Empty() {}
+</code></pre>
+<h2 id="destructor">Destructor</h2>
+<p>The default created destructor will not be virtual! This means if you have derived class and try to delete it via base class, it will only be partially deleted!!</p>
+<pre><code>class Base {};
+class Derived {};
+
+Base* a = new Derived();
+delete a;      // undefined! ~Base() is not virtual, ~Derived() not called
+</code></pre>
+<h2 id="virtual-function">Virtual function</h2>
+<p>Declare virtual function only when needed, because the extra overhead <em>vptr</em> and *vtbl.</p>
+<p>If a class has one or more virtual functions, instance of the class (object) will carry a virtual table pointer (vptr), that points to a virtual table (vtbl) contains an array of virtual function pointers. Each class with virtual functions has an associated vtbl. When a virtual function is called, it will determine which function to call by following the object's vptr to a vtbl.</p>
+<p>So object size will increase (for the extra pointer), and need extra time for searching.</p>
+<p>As conclusion, don't declare virtual function if the class is not designed for polymorphism. But if there's a virtual function declared, the destructor has to be virtual!!!</p>
+<h2 id="call-order">Call Order</h2>
+<p>General Rule:
+Base Constructor -&gt;&gt; Derived Constructor -&gt;&gt; Derived Destructor -&gt;&gt; Base Destructor</p>
+<p>This leads to a problem, you shouldn't call a virtual function inside constructors and destructors! The call will never go to a more derived class than the currently executing one.
+It seems reasonable: the derived constructor won't be called by then, therefore the child will not be constructed yet. And when destructing, derived object will already be destructed.</p>
+<h2 id="assignment-operators">Assignment Operators</h2>
+<p>Remember to return * this</p>
+<pre><code>Something&amp; operator= (const Something&amp; rhs)
+{
+    ...
+    return * this;
+}
+</code></pre>
+<p>So it can be chained like this: x = y = z = 15;</p>
+<h2 id="handle-operator-when-assigned-to-self">Handle operator= when assigned to self</h2>
+<h2 id="copying-functions-should-copy-all-of-an-objects-data">Copying functions should copy all of an object's data</h2>
+
+  <br>
+    
+
+    <br>
+</div>
+
+<footer class="col-md-12 wm-page-content">
+  <p>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a> using <a href="None">Windmill Dark</a> theme by None (noraj).</p>
+</footer>
+
+</body>
+</html>
